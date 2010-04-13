@@ -28,7 +28,7 @@
               hub.debug("#"+data) ;
             } else if (data.indexOf(":") === -1) { // This is an array of pk's
               hub.debug("Key List");
-              var pks = hub.json.decode(data),
+              var pks = JSON.parse(data),
                   i = pks.length, fetched = 0 ;
               while (i--){
                 pk = pks[i] ;
@@ -50,7 +50,7 @@
               pk = data.substr(0,64) ;
               var json = data.substr(65) ;
               hub.debug("^ Adding Pack: "+pk) ;
-              var pack = hub.json.decode(json) ;
+              var pack = JSON.parse(json) ;
               store.addPack(pack, pk) ;
             }
           };
@@ -62,7 +62,7 @@
           // Hook into store to be told when a pack is commited.
           store.packCommitted = function(version, pack) {
             hub.debug("Sending Pack") ;
-            WS.send(version+":"+hub.json.encode(pack)) ;
+            // WS.send(version+":"+JSON.stringify(pack)) ;
           }
           
           
@@ -70,11 +70,6 @@
       }
       
       Issues = hub.Object.create({
-        store: hub.Hub.create({
-          uti: 'com.hub.demo.web',
-          commitRecordsAutomatically: hub.YES
-        }),
-        
         issues: null,
         
         add: function() {
@@ -92,7 +87,11 @@
       Issues.Issue = hub.Record.extend({
         isDone: hub.Record.attr(Boolean),
         description: hub.Record.attr(String)
-      }) ;
+      });
+      
+      hub.mixin(Issues.Issue, {
+        recordTypeName: 'Issues.Issue'
+      });
       
       Issues.IssueListView = hub.Object.create({
         
@@ -143,6 +142,12 @@
       
       $(document).ready(function(){
         hub.debug('Running Main');
+        
+        Issues.store = hub.Hub.create({
+          uti: 'com.hub.demo.web',
+          commitRecordsAutomatically: true
+        });
+        
         Issues.store.checkout() ;
         
         var issues = Issues.store.find(hub.Query.local(Issues.Issue, {
@@ -155,7 +160,7 @@
           Issues.add() ;
         });
         
-        setupPush(Issues.store);        
+        setupPush(Issues.store);
       });
     </script>
     

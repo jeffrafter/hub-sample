@@ -17047,9 +17047,9 @@ hub.Hub = hub.Store.extend(
 
       var set = hub.CoreSet.create([storeKey]);
       set.addEach(oldKeys);
-      this._notifyRecordArrays(set, hub.CoreSet.create(recordTypes));
+      this._hub_notifyRecordArrays(set, hub.CoreSet.create(recordTypes));
 
-      ret = this._commitRecords(storeKeys, params);
+      ret = this._hub_commitRecords(storeKeys, params);
     }
     //remove all commited changes from changelog
     if (ret) {
@@ -17057,7 +17057,7 @@ hub.Hub = hub.Store.extend(
     }
     return ret;
   },
-  _commitRecords: function(keys, params) {
+  _hub_commitRecords: function(keys, params) {
     if (!this._hub.key) {
       this._hub.key = hub.uuid();
       this.ensureHubName();
@@ -17164,8 +17164,8 @@ hub.Hub = hub.Store.extend(
     var i = keys.length,
     self = this,
     // FIXME: This should reference a User and Device object
-    currentTask = hub.get('currentTask'),
-    currentActor = hub.get('currentActor'),
+    currentTask = "foo", // hub.get('currentTask'),
+    currentActor = "bar", // hub.get('currentActor'),
     currentTime = new Date().getTime(),
     totalStorage = 0;
     // Loop through our records creating new 
@@ -17189,7 +17189,7 @@ hub.Hub = hub.Store.extend(
         bytes: json,
         storage: json.length,
         key: hub.SHA256(json),
-        recordTypeName: recordType.toString(),
+        recordTypeName: recordType.recordTypeName,
         created_on: currentTime
       };
       if (!this._keysByType[props.recordTypeName]) {
