@@ -1,0 +1,172 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+  "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+  <head>
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+    <title>Hub Issues Tracker Demo</title>    
+    <style type="text/css" media="screen">      
+    </style>    
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+    <script type="text/javascript" src="./hub.js"></script>
+    
+    <script type="text/javascript" charset="utf-8">
+      var WS;
+      function setupPush(store) {
+        // Setup WebSocket
+        if (!window.WebSocket) alert('No socket');
+        if (window.WebSocket) {
+          WS = new WebSocket("ws://localhost:8000/memstore");
+          WS.onopen = function() { 
+            hub.debug("Connection open ...") ;
+            WS.send("READY") ;
+          };
+
+          WS.onmessage = function(evt) { 
+            var data = evt.data, pk ;
+            hub.debug("Got Message from Socket:") ; 
+            if (data.indexOf("#") === 0) {
+              hub.debug("#"+data) ;
+            } else if (data.indexOf(":") === -1) { // This is an array of pk's
+              hub.debug("Key List");
+              var pks = hub.json.decode(data),
+                  i = pks.length, fetched = 0 ;
+              while (i--){
+                pk = pks[i] ;
+                // sc_log("^ Checking PK: "+pk);
+                if (!store.hasCommit(pk)) {
+                  hub.debug("^ Getting PK: "+pk) ;
+                  fetched++;
+                  WS.send(pk);
+                }
+              }  
+              var keysToSend = store.extraKeys(pks) ;
+              keysToSend.forEach(function(key){
+                store.sendPack(key);
+              });
+              // if (fetched === 0) {
+              //   WS.send("PING");
+              // }
+            } else { // it's a pack
+              pk = data.substr(0,64) ;
+              var json = data.substr(65) ;
+              hub.debug("^ Adding Pack: "+pk) ;
+              var pack = hub.json.decode(json) ;
+              store.addPack(pack, pk) ;
+            }
+          };
+
+          WS.onclose = function(evt) { 
+            hub.debug("Connection closed.") ; 
+          };
+          
+          // Hook into store to be told when a pack is commited.
+          store.packCommitted = function(version, pack) {
+            hub.debug("Sending Pack") ;
+            WS.send(version+":"+hub.json.encode(pack)) ;
+          }
+          
+          
+        }
+      }
+      
+      Issues = hub.Object.create({
+        store: hub.Hub.create({
+          uti: 'com.hub.demo.web',
+          commitRecordsAutomatically: hub.YES
+        }),
+        
+        issues: null,
+        
+        add: function() {
+          var reply = prompt("Issue Description", "New Issue") ;
+          hub.debug('About to add a new issue - ' + reply);
+          Issues.store.createRecord(Issues.Issue, {
+            description: reply,
+            isDone: false
+          })
+          hub.debug('Issue added ' + reply);
+        }
+        
+      });
+      
+      Issues.Issue = hub.Record.extend({
+        isDone: hub.Record.attr(Boolean),
+        description: hub.Record.attr(String)
+      }) ;
+      
+      Issues.IssueListView = hub.Object.create({
+        
+        layerId: 'issues',
+        contentBinding: 'Issues.issues',
+        contentLengthBinding: '*content.length',
+        
+        contentLengthDidChange: function() {
+          hub.debug('updating list');
+          this.updateList();
+        }.observes('contentLength'), //'content', 'content.[]'
+        
+        updateList: function() {
+          hub.debug('>>>>>>>>> updating list');
+          var content = Issues.issues,
+              layerId = '#'+this.get('layerId'),
+              layer   = $(layerId),
+              id, isDone, checked, newEle ;
+          
+          layer.empty();
+          hub.debug('>>>>>>>>> content:' + content);
+          content.forEach(function(item, idx) {
+            id = item.get('guid') ;
+            isDone = item.get('isDone') ;
+            checked = isDone ? " checked=checked " : ""
+            newEle = hub.fmt("<li id='issue-%@' id> <input type=checkbox %@ name='%@'> %@</li>",
+              idx, checked, 'isDone', item.get('description')) ;
+              
+            layer.append(newEle) ;
+            newEle = $(hub.fmt('#issue-%@', id)) ;
+            
+            if(isDone) {
+              newEle.addClass('done') ;
+            }
+          }) ;
+          $(layerId+' :checkbox').click(this.checkBoxClicked) ;
+          
+        },
+        
+        checkBoxClicked: function(event) {
+          Issues.target = event.target ;
+          var idx = $(event.target).parent().attr('id').split("-")[1],
+              obj = Issues.get('issues').objectAt(idx) ;
+          obj.setIfChanged('isDone', !obj.get('isDone')); // Toggle The value.
+        }
+        
+      })
+      
+      $(document).ready(function(){
+        hub.debug('Running Main');
+        Issues.store.checkout() ;
+        
+        var issues = Issues.store.find(hub.Query.local(Issues.Issue, {
+          orderBy: 'isDone,description'
+        })) ;
+        Issues.set('issues', issues) ;
+        
+        // JQuery Code.
+        $('#add').click(function(event) {
+          Issues.add() ;
+        });
+        
+        setupPush(Issues.store);        
+      });
+    </script>
+    
+  </head>
+  <body>
+    <h1>Issues</h1>    
+    <div id="buttons">
+      <input type="button" value="New Issue" id="add">
+    </div>    
+    <ul id="issues">
+      
+    </ul>
+  </body>
+</html>

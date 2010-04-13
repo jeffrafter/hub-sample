@@ -1,0 +1,20 @@
+This is the start of a sample issue tracker with hub.js (http://github.com/hubjs/hub).
+
+Most of this is based on the following gists, with code converted to the latest hub.js builds:
+
+WebSocket: http://gist.github.com/358550
+MemStore: http://gist.github.com/358547
+Server: http://gist.github.com/358546
+Demo: http://gist.github.com/358544
+
+Currently this application requires a browser with an HTML5 WebSocket implementation
+and local storage. On Mac OSX your best choice is WebKit.
+
+Alternative non-HTML5 socket implementations
+
+  http://github.com/RosePad/Socket.IO
+  http://github.com/RosePad/Socket.IO-node
+
+Also optional: 
+
+  http://github.com/Guille/node.websocket.js/ (sample chat server)
