@@ -15,7 +15,7 @@
         // Setup WebSocket
         if (!window.WebSocket) alert('No socket');
         if (window.WebSocket) {
-          WS = new WebSocket("ws://localhost:8000/memstore");
+          WS = new WebSocket("ws://localhost:8003/memstore");
           WS.onopen = function() { 
             hub.debug("Connection open ...") ;
             WS.send("READY") ;

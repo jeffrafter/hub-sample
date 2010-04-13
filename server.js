@@ -205,7 +205,7 @@ var server = net.createServer(function(connection) {
             // Import requested resource
 
             try {
-                client.resource = require('./resources' + resource);
+                client.resource = require('./' + resource);
             } catch (e) {
                 sys.puts(headers['Host'] + ' tries to connect to resource \'' +
                     resource + '\', but the resource does not exist.');
@@ -251,7 +251,7 @@ var server = net.createServer(function(connection) {
           
         }
     });
-}).listen(8000);
+}).listen(8003);
 
 setInterval( function() {
   var i = clients.ids.length;
