@@ -96,23 +96,19 @@
       Issues.IssueListView = hub.Object.create({
         
         layerId: 'issues',
-        contentBinding: 'Issues.issues',
-        contentLengthBinding: '*content.length',
         
         contentLengthDidChange: function() {
           hub.debug('updating list');
           this.updateList();
-        }.observes('contentLength'), //'content', 'content.[]'
+        }.observes('Issues.issues.length'), 
         
         updateList: function() {
-          hub.debug('>>>>>>>>> updating list');
           var content = Issues.issues,
               layerId = '#'+this.get('layerId'),
               layer   = $(layerId),
               id, isDone, checked, newEle ;
           
           layer.empty();
-          hub.debug('>>>>>>>>> content:' + content);
           content.forEach(function(item, idx) {
             id = item.get('guid') ;
             isDone = item.get('isDone') ;
